@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0001-init
+      author: pedro
+      changes:
+        - createTable:
+            tableName: doctors
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: calendar_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: specialty
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
