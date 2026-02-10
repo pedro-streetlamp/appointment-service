@@ -7,7 +7,7 @@ databaseChangeLog:
             tableName: doctors
             columns:
               - column:
-                  name: id
+                  name: name
                   type: VARCHAR(255)
                   constraints:
                     primaryKey: true
@@ -22,3 +22,51 @@ databaseChangeLog:
                   type: VARCHAR(255)
                   constraints:
                     nullable: false
+        - createIndex:
+            indexName: idx_doctors_name
+            tableName: doctors
+            columns:
+              - column:
+                  name: name
+        - createIndex:
+            indexName: idx_doctors_specialty
+            tableName: doctors
+            columns:
+              - column:
+                  name: specialty
+        - createTable:
+            tableName: doctors_slots
+            columns:
+              - column:
+                  name: start_time
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: doctor_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    references: doctors(name)
+                    foreignKeyName: fk_doctors_doctors_slots
+              - column:
+                  name: duration
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: state
+                  type: VARCHAR(25)
+        - createIndex:
+            indexName: idx_doctors_slots_start_time
+            tableName: doctors_slots
+            columns:
+              - column:
+                  name: start_time
+        - createIndex:
+            indexName: idx_doctors_slots_doctor_id
+            tableName: doctors_slots
+            columns:
+              - column:
+                  name: doctor_id
