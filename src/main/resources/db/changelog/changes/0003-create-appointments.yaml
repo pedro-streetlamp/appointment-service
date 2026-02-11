@@ -1,0 +1,139 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0003-create-appointments
+      author: pedro
+      changes:
+
+        - createTable:
+            tableName: appointments
+            columns:
+
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: doctor_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: room_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: patient_name
+                  type: varchar(128)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: patient_email
+                  type: varchar(256)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: specialty
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: start_time
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: end_time
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: status
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: updated_at
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+
+
+        # -----------------------
+        # Foreign keys
+        # -----------------------
+
+        - addForeignKeyConstraint:
+            baseTableName: appointments
+            baseColumnNames: doctor_id
+            referencedTableName: doctors
+            referencedColumnNames: id
+            constraintName: fk_appointments_doctor
+
+        - addForeignKeyConstraint:
+            baseTableName: appointments
+            baseColumnNames: room_id
+            referencedTableName: rooms
+            referencedColumnNames: id
+            constraintName: fk_appointments_room
+
+
+        # -----------------------
+        # No overbooking
+        # -----------------------
+        # Same doctor cannot have two appointments for the same slot
+        - addUniqueConstraint:
+            tableName: appointments
+            columnNames: doctor_id, start_time, end_time
+            constraintName: ux_appointments_doctor_slot
+
+        # Same room cannot have two appointments for the same slot
+        - addUniqueConstraint:
+            tableName: appointments
+            columnNames: room_id, start_time, end_time
+            constraintName: ux_appointments_room_slot
+
+
+        # -----------------------
+        # Helpful indexes
+        # -----------------------
+
+        - createIndex:
+            tableName: appointments
+            indexName: ix_appointments_start_time
+            columns:
+              - column:
+                  name: start_time
+
+        - createIndex:
+            tableName: appointments
+            indexName: ix_appointments_doctor
+            columns:
+              - column:
+                  name: doctor_id
+
+        - createIndex:
+            tableName: appointments
+            indexName: ix_appointments_room
+            columns:
+              - column:
+                  name: room_id

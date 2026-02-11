@@ -25,11 +25,6 @@ public class RoomSteps {
 
     private List<Room> foundRooms;
 
-    @Before
-    public void cleanDatabase() {
-        dsl.deleteFrom(ROOMS).execute();
-    }
-
     @Given("the following rooms exist:")
     public void theFollowingRoomsExist(DataTable dataTable) {
         List<Map<String, String>> rows = dataTable.asMaps(String.class, String.class);

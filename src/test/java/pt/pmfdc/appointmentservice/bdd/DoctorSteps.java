@@ -25,11 +25,6 @@ public class DoctorSteps {
 
     private List<Doctor> foundDoctors;
 
-    @Before
-    public void cleanDatabase() {
-        dsl.deleteFrom(DOCTORS).execute();
-    }
-
     @Given("the following doctors exist:")
     public void theFollowingDoctorsExist(DataTable dataTable) {
         List<Map<String, String>> rows = dataTable.asMaps(String.class, String.class);
