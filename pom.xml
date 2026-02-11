@@ -96,6 +96,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
@@ -163,7 +168,7 @@
                                     </properties>
                                 </database>
                                 <target>
-                                    <packageName>uk.pmfdc.analytics.jooq</packageName>
+                                    <packageName>pt.pmfdc.appointmentservice.jooq</packageName>
                                     <directory>target/generated-sources/jooq</directory>
                                 </target>
                             </generator>

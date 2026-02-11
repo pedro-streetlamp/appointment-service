@@ -11,5 +11,6 @@ import static io.cucumber.junit.platform.engine.Constants.GLUE_PROPERTY_NAME;
 @IncludeEngines("cucumber")
 @SelectClasspathResource("features")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "pt.pmfdc.appointmentservice.bdd")
+@ConfigurationParameter(key = "cucumber.execution.parallel.enabled", value = "false")
 public class CucumberTest {
 }

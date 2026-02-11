@@ -15,8 +15,16 @@ public abstract class AbstractPostgresTest {
             .withUsername("test")
             .withPassword("test");
 
+    private static void ensurePostgresStarted() {
+        if (!POSTGRES.isRunning()) {
+            POSTGRES.start();
+        }
+    }
+
     @DynamicPropertySource
     static void registerDataSourceProperties(DynamicPropertyRegistry registry) {
+        ensurePostgresStarted();
+
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
