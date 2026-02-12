@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: appointment-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: "appointments"
+      POSTGRES_USER: "test"
+      POSTGRES_PASSWORD: "test"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d appointments"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  doctor-calendar:
+    image: wiremock/wiremock:3.6.0
+    container_name: doctor-calendar
+    ports:
+      - "8081:8080"
+    command: ["--verbose", "--global-response-templating"]
+    volumes:
+      - ./wiremock/doctor-calendar:/home/wiremock
+
+  room-reservation:
+    image: wiremock/wiremock:3.6.0
+    container_name: room-reservation
+    ports:
+      - "8082:8080"
+    command: ["--verbose", "--global-response-templating"]
+    volumes:
+      - ./wiremock/room-reservation:/home/wiremock
+
+  appointment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: appointment-service
+    ports:
+      - "8080:8080"
+    environment:
+      # Point Spring to the Postgres container (host must be the service name: postgres)
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/appointments"
+      SPRING_DATASOURCE_USERNAME: "test"
+      SPRING_DATASOURCE_PASSWORD: "test"
+
+      # External services base URLs inside the compose network
+      DOCTOR_CALENDAR_BASE_URL: "http://doctor-calendar:8080"
+      ROOM_RESERVATION_BASE_URL: "http://room-reservation:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      doctor-calendar:
+        condition: service_started
+      room-reservation:
+        condition: service_started
+
+volumes:
+  postgres_data:
