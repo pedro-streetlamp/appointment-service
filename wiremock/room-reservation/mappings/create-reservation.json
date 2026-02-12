@@ -1,0 +1,28 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "POST",
+    "urlPathPattern": "/v1/rooms/[^/]+/reservations",
+    "headers": {
+      "Content-Type": { "contains": "application/json" }
+    },
+    "bodyPatterns": [
+      { "matchesJsonPath": "$.externalCorrelationId" },
+      { "matchesJsonPath": "$.startTime" },
+      { "matchesJsonPath": "$.endTime" }
+    ]
+  },
+  "response": {
+    "status": 201,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": {
+      "reservationId": "RSV-55667788",
+      "roomId": "{{request.pathSegments.[2]}}",
+      "externalCorrelationId": "{{jsonPath request.body '$.externalCorrelationId'}}",
+      "startTime": "{{jsonPath request.body '$.startTime'}}",
+      "endTime": "{{jsonPath request.body '$.endTime'}}",
+      "status": "RESERVED"
+    },
+    "transformers": ["response-template"]
+  }
+}

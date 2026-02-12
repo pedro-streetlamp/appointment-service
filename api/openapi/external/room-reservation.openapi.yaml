@@ -1,0 +1,225 @@
+openapi: 3.0.3
+info:
+  title: Room Reservation Service API
+  version: 1.0.0
+  description: >
+    External system that owns room reservations. The appointment-service uses it to
+    reserve and release rooms for a timeslot.
+
+servers:
+  - url: http://localhost:8082
+
+tags:
+  - name: RoomReservations
+
+paths:
+  /v1/rooms/{roomId}/reservations:
+    post:
+      tags: [RoomReservations]
+      summary: Create a room reservation (reserve a slot)
+      operationId: createRoomReservation
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          description: Room identifier in the room reservation system (external id).
+          schema:
+            type: string
+            minLength: 1
+            example: "ROOM-12A"
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: Optional idempotency key to safely retry without duplicating reservations.
+          schema:
+            type: string
+            minLength: 1
+            example: "idem-7a6b5c4d3e2f"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoomReservationRequest"
+            examples:
+              reserveRoom:
+                summary: Reserve a room for an appointment slot
+                value:
+                  externalCorrelationId: "6f5b8c2a-9d4c-4b02-9f3a-4c9e5b9c2d11"
+                  startTime: "2026-02-11T10:00:00Z"
+                  endTime: "2026-02-11T10:30:00Z"
+      responses:
+        "201":
+          description: Reservation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateRoomReservationResponse"
+              examples:
+                created:
+                  summary: Reservation created in room system
+                  value:
+                    reservationId: "RSV-55667788"
+                    roomId: "ROOM-12A"
+                    externalCorrelationId: "6f5b8c2a-9d4c-4b02-9f3a-4c9e5b9c2d11"
+                    startTime: "2026-02-11T10:00:00Z"
+                    endTime: "2026-02-11T10:30:00Z"
+                    status: "RESERVED"
+        "400":
+          description: Invalid request (missing/invalid fields, invalid timeslot, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                validationError:
+                  value:
+                    code: "VALIDATION_ERROR"
+                    message: "endTime must be after startTime"
+        "404":
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                roomNotFound:
+                  value:
+                    code: "NOT_FOUND"
+                    message: "Room not found: ROOM-12A"
+        "409":
+          description: Room is not available for the requested timeslot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                conflict:
+                  value:
+                    code: "CONFLICT"
+                    message: "Room is already reserved for that time slot"
+        "500":
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unexpected:
+                  value:
+                    code: "INTERNAL_ERROR"
+                    message: "Unexpected error"
+
+  /v1/rooms/{roomId}/reservations/{reservationId}:
+    delete:
+      tags: [RoomReservations]
+      summary: Cancel a room reservation
+      operationId: deleteRoomReservation
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          description: Room identifier in the room reservation system (external id).
+          schema:
+            type: string
+            minLength: 1
+            example: "ROOM-12A"
+        - name: reservationId
+          in: path
+          required: true
+          description: Identifier of the reservation in the room reservation system.
+          schema:
+            type: string
+            minLength: 1
+            example: "RSV-55667788"
+      responses:
+        "204":
+          description: Deleted (or already absent)
+        "404":
+          description: Room or reservation not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                notFound:
+                  value:
+                    code: "NOT_FOUND"
+                    message: "Reservation not found: RSV-55667788"
+        "500":
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unexpected:
+                  value:
+                    code: "INTERNAL_ERROR"
+                    message: "Unexpected error"
+
+components:
+  schemas:
+    CreateRoomReservationRequest:
+      type: object
+      required: [externalCorrelationId, startTime, endTime]
+      properties:
+        externalCorrelationId:
+          type: string
+          format: uuid
+          description: Correlation id from the caller (e.g., appointment-service appointment id).
+          example: "6f5b8c2a-9d4c-4b02-9f3a-4c9e5b9c2d11"
+        startTime:
+          type: string
+          format: date-time
+          example: "2026-02-11T10:00:00Z"
+        endTime:
+          type: string
+          format: date-time
+          example: "2026-02-11T10:30:00Z"
+
+    CreateRoomReservationResponse:
+      type: object
+      required: [reservationId, roomId, externalCorrelationId, startTime, endTime, status]
+      properties:
+        reservationId:
+          type: string
+          minLength: 1
+          description: Identifier of the created reservation in this service.
+          example: "RSV-55667788"
+        roomId:
+          type: string
+          minLength: 1
+          description: Room identifier in this service (external id).
+          example: "ROOM-12A"
+        externalCorrelationId:
+          type: string
+          format: uuid
+          example: "6f5b8c2a-9d4c-4b02-9f3a-4c9e5b9c2d11"
+        startTime:
+          type: string
+          format: date-time
+          example: "2026-02-11T10:00:00Z"
+        endTime:
+          type: string
+          format: date-time
+          example: "2026-02-11T10:30:00Z"
+        status:
+          type: string
+          enum: [RESERVED]
+          example: "RESERVED"
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Stable error code (e.g., VALIDATION_ERROR, NOT_FOUND, CONFLICT).
+          example: "CONFLICT"
+        message:
+          type: string
+          example: "Room is already reserved for that time slot"
+        details:
+          type: object
+          additionalProperties: true

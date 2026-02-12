@@ -1,0 +1,28 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "POST",
+    "urlPathPattern": "/v1/doctors/[^/]+/appointments",
+    "headers": {
+      "Content-Type": { "contains": "application/json" }
+    },
+    "bodyPatterns": [
+      { "matchesJsonPath": "$.externalCorrelationId" },
+      { "matchesJsonPath": "$.startTime" },
+      { "matchesJsonPath": "$.endTime" }
+    ]
+  },
+  "response": {
+    "status": 201,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": {
+      "appointmentId": "CAL-APT-87456321",
+      "doctorId": "{{request.pathSegments.[2]}}",
+      "externalCorrelationId": "{{jsonPath request.body '$.externalCorrelationId'}}",
+      "startTime": "{{jsonPath request.body '$.startTime'}}",
+      "endTime": "{{jsonPath request.body '$.endTime'}}",
+      "status": "BOOKED"
+    },
+    "transformers": ["response-template"]
+  }
+}

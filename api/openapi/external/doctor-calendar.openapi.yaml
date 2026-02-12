@@ -1,0 +1,235 @@
+openapi: 3.0.3
+info:
+  title: Doctor Calendar Service API
+  version: 1.0.0
+  description: >
+    External system that owns doctors' calendars. The appointment-service uses it to
+    create and cancel doctor calendar entries.
+
+servers:
+  - url: http://localhost:8081
+
+tags:
+  - name: DoctorAppointments
+
+paths:
+  /v1/doctors/{doctorId}/appointments:
+    post:
+      tags: [DoctorAppointments]
+      summary: Create a doctor calendar appointment (book a slot)
+      operationId: createDoctorAppointment
+      parameters:
+        - name: doctorId
+          in: path
+          required: true
+          description: Doctor identifier in the doctor calendar system (external id).
+          schema:
+            type: string
+            minLength: 1
+            example: "DOC-102938"
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: Optional idempotency key to safely retry without duplicating bookings.
+          schema:
+            type: string
+            minLength: 1
+            example: "idem-1f2e3d4c5b6a"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDoctorAppointmentRequest"
+            examples:
+              bookDoctorSlot:
+                summary: Book a doctor slot for an appointment
+                value:
+                  externalCorrelationId: "6f5b8c2a-9d4c-4b02-9f3a-4c9e5b9c2d11"
+                  startTime: "2026-02-11T10:00:00Z"
+                  endTime: "2026-02-11T10:30:00Z"
+                  specialty: "DERMATOLOGY"
+                  patientName: "Jane Doe"
+      responses:
+        "201":
+          description: Doctor appointment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateDoctorAppointmentResponse"
+              examples:
+                created:
+                  summary: Booking created in doctor calendar
+                  value:
+                    appointmentId: "CAL-APT-87456321"
+                    doctorId: "DOC-102938"
+                    externalCorrelationId: "6f5b8c2a-9d4c-4b02-9f3a-4c9e5b9c2d11"
+                    startTime: "2026-02-11T10:00:00Z"
+                    endTime: "2026-02-11T10:30:00Z"
+                    status: "BOOKED"
+        "400":
+          description: Invalid request (missing/invalid fields, invalid timeslot, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                validationError:
+                  value:
+                    code: "VALIDATION_ERROR"
+                    message: "endTime must be after startTime"
+        "404":
+          description: Doctor not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                doctorNotFound:
+                  value:
+                    code: "NOT_FOUND"
+                    message: "Doctor not found: DOC-102938"
+        "409":
+          description: Doctor is not available for the requested timeslot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                conflict:
+                  value:
+                    code: "CONFLICT"
+                    message: "Doctor is already booked for that time slot"
+        "500":
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unexpected:
+                  value:
+                    code: "INTERNAL_ERROR"
+                    message: "Unexpected error"
+
+  /v1/doctors/{doctorId}/appointments/{appointmentId}:
+    delete:
+      tags: [DoctorAppointments]
+      summary: Cancel a doctor calendar appointment
+      operationId: deleteDoctorAppointment
+      parameters:
+        - name: doctorId
+          in: path
+          required: true
+          description: Doctor identifier in the doctor calendar system (external id).
+          schema:
+            type: string
+            minLength: 1
+            example: "DOC-102938"
+        - name: appointmentId
+          in: path
+          required: true
+          description: Identifier of the calendar appointment in the doctor calendar system.
+          schema:
+            type: string
+            minLength: 1
+            example: "CAL-APT-87456321"
+      responses:
+        "204":
+          description: Deleted (or already absent)
+        "404":
+          description: Doctor or appointment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                notFound:
+                  value:
+                    code: "NOT_FOUND"
+                    message: "Appointment not found: CAL-APT-87456321"
+        "500":
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                unexpected:
+                  value:
+                    code: "INTERNAL_ERROR"
+                    message: "Unexpected error"
+
+components:
+  schemas:
+    CreateDoctorAppointmentRequest:
+      type: object
+      required: [externalCorrelationId, startTime, endTime, specialty, patientName]
+      properties:
+        externalCorrelationId:
+          type: string
+          format: uuid
+          description: Correlation id from the caller (e.g., appointment-service appointment id).
+          example: "6f5b8c2a-9d4c-4b02-9f3a-4c9e5b9c2d11"
+        startTime:
+          type: string
+          format: date-time
+          example: "2026-02-11T10:00:00Z"
+        endTime:
+          type: string
+          format: date-time
+          example: "2026-02-11T10:30:00Z"
+        specialty:
+          type: string
+          minLength: 1
+          example: "DERMATOLOGY"
+        patientName:
+          type: string
+          minLength: 1
+          example: "Jane Doe"
+
+    CreateDoctorAppointmentResponse:
+      type: object
+      required: [appointmentId, doctorId, externalCorrelationId, startTime, endTime, status]
+      properties:
+        appointmentId:
+          type: string
+          minLength: 1
+          description: Identifier of the created calendar appointment in this service.
+          example: "CAL-APT-87456321"
+        doctorId:
+          type: string
+          minLength: 1
+          description: Doctor identifier in this service (external id).
+          example: "DOC-102938"
+        externalCorrelationId:
+          type: string
+          format: uuid
+          example: "6f5b8c2a-9d4c-4b02-9f3a-4c9e5b9c2d11"
+        startTime:
+          type: string
+          format: date-time
+          example: "2026-02-11T10:00:00Z"
+        endTime:
+          type: string
+          format: date-time
+          example: "2026-02-11T10:30:00Z"
+        status:
+          type: string
+          enum: [BOOKED]
+          example: "BOOKED"
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Stable error code (e.g., VALIDATION_ERROR, NOT_FOUND, CONFLICT).
+          example: "CONFLICT"
+        message:
+          type: string
+          example: "Doctor is already booked for that time slot"
+        details:
+          type: object
+          additionalProperties: true
