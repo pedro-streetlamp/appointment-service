@@ -57,11 +57,11 @@ public class AppointmentsController {
         if (limit < 1 || limit > 500) throw new IllegalArgumentException("limit must be between 1 and 500");
         if (offset < 0) throw new IllegalArgumentException("offset must be >= 0");
 
-        String domainStatus = mapApiStatusToDomain(status);
+        String normalizedStatus = normalizeStatus(status);
 
-        int total = appointmentRepository.countViews(from, to, specialty, domainStatus);
+        int total = appointmentRepository.countViews(from, to, specialty, normalizedStatus);
         List<AppointmentRepository.AppointmentView> items =
-                appointmentRepository.listViews(from, to, specialty, domainStatus, limit, offset);
+                appointmentRepository.listViews(from, to, specialty, normalizedStatus, limit, offset);
 
         return new AppointmentListResponseDto(
                 items.stream().map(this::toDto).toList(),
@@ -81,18 +81,12 @@ public class AppointmentsController {
                 v.specialty(),
                 v.startTime(),
                 v.endTime(),
-                mapDomainStatusToApi(v.status())
+                normalizeStatus(v.status())
         );
     }
 
-    // OpenAPI enum includes CREATED; domain uses PENDING. We translate for contract compliance.
-    private String mapDomainStatusToApi(String domainStatus) {
-        if (domainStatus == null) return null;
-        return domainStatus.equalsIgnoreCase("PENDING") ? "CREATED" : domainStatus.toUpperCase();
-    }
-
-    private String mapApiStatusToDomain(String apiStatus) {
-        if (apiStatus == null || apiStatus.isBlank()) return null;
-        return apiStatus.equalsIgnoreCase("CREATED") ? "PENDING" : apiStatus.toUpperCase();
+    private String normalizeStatus(String status) {
+        if (status == null || status.isBlank()) return null;
+        return status.toUpperCase();
     }
 }

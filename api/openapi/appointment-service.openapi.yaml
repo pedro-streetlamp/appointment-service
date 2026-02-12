@@ -229,7 +229,7 @@ components:
     AppointmentStatus:
       type: string
       description: Current appointment state.
-      enum: [CREATED, CONFIRMED, FAILED, CANCELLED]
+      enum: [PENDING, CONFIRMED, FAILED, CANCELLED]
 
     AppointmentListResponse:
       type: object

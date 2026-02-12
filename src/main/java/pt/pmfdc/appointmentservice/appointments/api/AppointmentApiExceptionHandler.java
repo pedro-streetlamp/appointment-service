@@ -24,7 +24,7 @@ public class AppointmentApiExceptionHandler {
 
     @ExceptionHandler(AppointmentCreationException.class)
     public ResponseEntity<ErrorResponseDto> appointmentCreation(AppointmentCreationException ex) {
-        // Map the known “no availability” case to 409 as per OpenAPI.
+        // Map the known “no availability” case to 409.
         if ("No availability (doctor or room) for the requested timeslot".equals(ex.getMessage())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new ErrorResponseDto("NO_AVAILABILITY", ex.getMessage(), null));
