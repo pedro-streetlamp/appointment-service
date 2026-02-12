@@ -1,6 +1,7 @@
 package pt.pmfdc.appointmentservice.appointments.api;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +11,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/appointments")
@@ -23,7 +25,9 @@ public class AppointmentsController {
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestBody CreateAppointmentRequestDto body
     ) {
-        // Note: idempotencyKey is currently accepted but not persisted/used.
+        log.info("Create appointment requested specialty={} startTime={} endTime={} idempotencyKeyPresent={}",
+                body.specialty(), body.startTime(), body.endTime(), idempotencyKey != null && !idempotencyKey.isBlank());
+
         UUID id = appointmentService.createAppointment(new CreateAppointmentRequest(
                 body.patientName(),
                 body.patientEmail(),
@@ -31,6 +35,8 @@ public class AppointmentsController {
                 body.startTime(),
                 body.endTime()
         ));
+
+        log.info("Appointment created id={}", id);
 
         var view = appointmentRepository.findViewById(id)
                 .orElseThrow(() -> new IllegalStateException("Appointment created but not found: " + id));
@@ -40,6 +46,8 @@ public class AppointmentsController {
 
     @GetMapping("/{appointmentId}")
     public AppointmentResponseDto getAppointment(@PathVariable UUID appointmentId) {
+        log.debug("Get appointment requested id={}", appointmentId);
+
         var view = appointmentRepository.findViewById(appointmentId)
                 .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
         return toDto(view);
@@ -58,6 +66,9 @@ public class AppointmentsController {
         if (offset < 0) throw new IllegalArgumentException("offset must be >= 0");
 
         String normalizedStatus = normalizeStatus(status);
+
+        log.debug("List appointments from={} to={} specialty={} status={} limit={} offset={}",
+                from, to, specialty, normalizedStatus, limit, offset);
 
         int total = appointmentRepository.countViews(from, to, specialty, normalizedStatus);
         List<AppointmentRepository.AppointmentView> items =
