@@ -20,7 +20,7 @@ public class OutboxDispatcher {
     private final EmailGatewayClient emailGatewayClient;
     private final ObjectMapper objectMapper;
 
-//    @Scheduled(fixedDelayString = "${outbox.dispatcher.fixed-delay-ms:1000}")
+    @Scheduled(fixedDelayString = "${outbox.dispatcher.fixed-delay-ms:1000}")
     public void scheduledDispatch() {
         dispatchOnce();
     }
