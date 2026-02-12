@@ -34,6 +34,15 @@ services:
     volumes:
       - ./wiremock/room-reservation:/home/wiremock
 
+  email-gateway:
+    image: wiremock/wiremock:3.6.0
+    container_name: email-gateway
+    ports:
+      - "8083:8080"
+    command: ["--verbose", "--global-response-templating"]
+    volumes:
+      - ./wiremock/email-gateway:/home/wiremock
+
   appointment-service:
     build:
       context: .
@@ -50,12 +59,15 @@ services:
       # External services base URLs inside the compose network
       DOCTOR_CALENDAR_BASE_URL: "http://doctor-calendar:8080"
       ROOM_RESERVATION_BASE_URL: "http://room-reservation:8080"
+      EMAIL_GATEWAY_BASE_URL: "http://email-gateway:8080"
     depends_on:
       postgres:
         condition: service_healthy
       doctor-calendar:
         condition: service_started
       room-reservation:
+        condition: service_started
+      email-gateway:
         condition: service_started
 
 volumes:
