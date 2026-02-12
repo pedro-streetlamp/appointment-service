@@ -18,20 +18,6 @@ public class AppointmentRepository {
 
     private final DSLContext dsl;
 
-    public Optional<UUID> findDoctorIdByExternalId(String externalId) {
-        return dsl.select(DOCTORS.ID)
-                .from(DOCTORS)
-                .where(DOCTORS.EXTERNAL_ID.eq(externalId))
-                .fetchOptional(DOCTORS.ID);
-    }
-
-    public Optional<UUID> findRoomIdByExternalId(String externalId) {
-        return dsl.select(ROOMS.ID)
-                .from(ROOMS)
-                .where(ROOMS.EXTERNAL_ID.eq(externalId))
-                .fetchOptional(ROOMS.ID);
-    }
-
     public boolean existsByDoctorSlot(UUID doctorId, OffsetDateTime startTime, OffsetDateTime endTime) {
         return dsl.fetchExists(
                 dsl.selectOne()
@@ -80,5 +66,23 @@ public class AppointmentRepository {
         }
 
         return id;
+    }
+
+    public void updateStatus(UUID appointmentId, AppointmentStatus status) {
+        int updated = dsl.update(APPOINTMENTS)
+                .set(APPOINTMENTS.STATUS, status.name())
+                .set(APPOINTMENTS.UPDATED_AT, OffsetDateTime.now())
+                .where(APPOINTMENTS.ID.eq(appointmentId))
+                .execute();
+
+        if (updated != 1) {
+            throw new IllegalStateException("Expected to update 1 row, but updated " + updated);
+        }
+    }
+
+    public void deleteById(UUID appointmentId) {
+        dsl.deleteFrom(APPOINTMENTS)
+                .where(APPOINTMENTS.ID.eq(appointmentId))
+                .execute();
     }
 }

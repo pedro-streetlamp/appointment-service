@@ -30,8 +30,6 @@ public class AppointmentSteps {
         Map<String, String> row = dataTable.asMaps(String.class, String.class).get(0);
 
         CreateAppointmentRequest request = new CreateAppointmentRequest(
-                row.get("doctorExternalId"),
-                row.get("roomExternalId"),
                 row.get("patientName"),
                 row.get("patientEmail"),
                 row.get("specialty"),

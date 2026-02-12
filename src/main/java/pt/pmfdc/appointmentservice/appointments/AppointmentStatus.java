@@ -1,5 +1,8 @@
 package pt.pmfdc.appointmentservice.appointments;
 
 public enum AppointmentStatus {
-    CREATED
+    PENDING,
+    CONFIRMED,
+    FAILED,
+    CANCELLED
 }

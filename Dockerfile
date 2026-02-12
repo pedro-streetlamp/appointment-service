@@ -8,13 +8,13 @@ COPY mvnw mvnw
 RUN ./mvnw -q -DskipTests dependency:go-offline
 
 COPY src src
+COPY api api
 RUN ./mvnw -q -DskipTests package
 
 # ---- runtime stage ----
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-# Copy the built jar (Spring Boot usually produces a single jar in target/)
 COPY --from=build /workspace/target/*.jar app.jar
 
 EXPOSE 8080

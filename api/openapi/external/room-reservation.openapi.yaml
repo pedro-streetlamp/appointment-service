@@ -7,7 +7,7 @@ info:
     reserve and release rooms for a timeslot.
 
 servers:
-  - url: http://localhost:8082
+  - url: http://localhost:8080
 
 tags:
   - name: RoomReservations
@@ -166,7 +166,7 @@ components:
       properties:
         externalCorrelationId:
           type: string
-          format: uuid
+          minLength: 1
           description: Correlation id from the caller (e.g., appointment-service appointment id).
           example: "6f5b8c2a-9d4c-4b02-9f3a-4c9e5b9c2d11"
         startTime:
@@ -194,7 +194,7 @@ components:
           example: "ROOM-12A"
         externalCorrelationId:
           type: string
-          format: uuid
+          minLength: 1
           example: "6f5b8c2a-9d4c-4b02-9f3a-4c9e5b9c2d11"
         startTime:
           type: string
