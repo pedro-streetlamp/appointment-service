@@ -1,0 +1,93 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0004-create-outbox
+      author: pedro
+      changes:
+
+        - createTable:
+            tableName: outbox_messages
+            columns:
+
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: aggregate_type
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: aggregate_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: type
+                  type: varchar(128)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: payload
+                  type: text
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: status
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: attempts
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: next_attempt_at
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: last_error
+                  type: text
+
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: updated_at
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+
+        # Ensure only one "appointment confirmed email" per appointment
+        - addUniqueConstraint:
+            tableName: outbox_messages
+            columnNames: type, aggregate_id
+            constraintName: ux_outbox_type_aggregate
+
+        - createIndex:
+            tableName: outbox_messages
+            indexName: ix_outbox_status_next_attempt
+            columns:
+              - column:
+                  name: status
+              - column:
+                  name: next_attempt_at

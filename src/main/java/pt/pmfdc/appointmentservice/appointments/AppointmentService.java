@@ -1,5 +1,6 @@
 package pt.pmfdc.appointmentservice.appointments;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,6 +11,8 @@ import pt.pmfdc.appointmentservice.external.doctor.api.DoctorAppointmentsApi;
 import pt.pmfdc.appointmentservice.external.doctor.model.CreateDoctorAppointmentRequest;
 import pt.pmfdc.appointmentservice.external.room.api.RoomReservationsApi;
 import pt.pmfdc.appointmentservice.external.room.model.CreateRoomReservationRequest;
+import pt.pmfdc.appointmentservice.outbox.OutboxRepository;
+import pt.pmfdc.appointmentservice.outbox.OutboxDispatcher;
 import pt.pmfdc.appointmentservice.rooms.Room;
 import pt.pmfdc.appointmentservice.rooms.RoomService;
 
@@ -28,6 +31,9 @@ public class AppointmentService {
 
     private final DoctorAppointmentsApi doctorAppointmentsApi;
     private final RoomReservationsApi roomReservationsApi;
+
+    private final OutboxRepository outboxRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public UUID createAppointment(CreateAppointmentRequest request) {
@@ -97,6 +103,23 @@ public class AppointmentService {
 
                     try {
                         appointmentRepository.updateStatus(appointmentId, AppointmentStatus.CONFIRMED);
+
+                        String payload = objectMapper.writeValueAsString(
+                                new OutboxDispatcher.AppointmentConfirmedEmailPayload(
+                                        request.patientName(),
+                                        request.patientEmail(),
+                                        request.startTime(),
+                                        request.endTime()
+                                )
+                        );
+
+                        outboxRepository.insertNew(
+                                "Appointment",
+                                appointmentId,
+                                "APPOINTMENT_CONFIRMED_EMAIL",
+                                payload
+                        );
+
                     } catch (Exception dbFailure) {
                         try {
                             roomReservationsApi.deleteRoomReservation(room.externalId(), roomReservationId);

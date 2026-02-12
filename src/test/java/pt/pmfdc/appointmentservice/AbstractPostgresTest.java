@@ -60,6 +60,25 @@ public abstract class AbstractPostgresTest {
                             .withStartupTimeout(Duration.ofSeconds(30))
             );
 
+    @Container
+    static final GenericContainer<?> EMAIL_GATEWAY_WIREMOCK = new GenericContainer<>("wiremock/wiremock:3.6.0")
+            .withExposedPorts(WIREMOCK_PORT)
+            .withCommand("--verbose", "--global-response-templating")
+            .withCopyFileToContainer(
+                    MountableFile.forHostPath("wiremock/email-gateway/mappings"),
+                    "/home/wiremock/mappings"
+            )
+            .withCopyFileToContainer(
+                    MountableFile.forHostPath("wiremock/email-gateway/__files"),
+                    "/home/wiremock/__files"
+            )
+            .waitingFor(
+                    Wait.forHttp("/__admin")
+                            .forPort(WIREMOCK_PORT)
+                            .forStatusCode(200)
+                            .withStartupTimeout(Duration.ofSeconds(30))
+            );
+
     private static void ensureContainersStarted() {
         if (!POSTGRES.isRunning()) {
             POSTGRES.start();
@@ -69,6 +88,9 @@ public abstract class AbstractPostgresTest {
         }
         if (!ROOM_RESERVATION_WIREMOCK.isRunning()) {
             ROOM_RESERVATION_WIREMOCK.start();
+        }
+        if (!EMAIL_GATEWAY_WIREMOCK.isRunning()) {
+            EMAIL_GATEWAY_WIREMOCK.start();
         }
     }
 
@@ -90,6 +112,10 @@ public abstract class AbstractPostgresTest {
         registry.add(
                 "room-reservation.base-url",
                 () -> "http://" + ROOM_RESERVATION_WIREMOCK.getHost() + ":" + ROOM_RESERVATION_WIREMOCK.getMappedPort(WIREMOCK_PORT)
+        );
+        registry.add(
+                "email-gateway.base-url",
+                () -> "http://" + EMAIL_GATEWAY_WIREMOCK.getHost() + ":" + EMAIL_GATEWAY_WIREMOCK.getMappedPort(WIREMOCK_PORT)
         );
     }
 }
