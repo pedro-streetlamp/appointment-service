@@ -82,6 +82,38 @@ To reset the DB volume (removes all data):
 docker compose down -v
 ```
 
+
+---
+
+## Admin endpoint authentication (local JWT)
+
+The admin listing endpoint is protected:
+
+- `GET /appointments` requires a valid **Bearer JWT** with an **`admin: true`** claim.
+- Other endpoints are not protected by JWT.
+
+### Configure the local JWT secret
+
+The service validates HS256 tokens using `admin.jwt.secret`.
+
+Recommended (so you don't commit secrets): set an env var and reference it from config, e.g.:
+```
+
+bash export ADMIN_JWT_SECRET="<YOUR_LOCAL_SECRET>"
+```
+
+Then run the service normally (it will pick up the secret via Spring configuration if you wire it that way).
+
+ 
+### Call the endpoint
+
+Send the token in the `Authorization` header:
+```
+bash curl -i
+-H "Authorization: Bearer <JWT_WITH_admin_true>"
+"http://localhost:8080/appointments"
+```
+
 ---
 ## Building & tests
 

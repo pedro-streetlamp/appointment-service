@@ -7,6 +7,7 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import pt.pmfdc.appointmentservice.appointments.api.CreateAppointmentRequestDto;
@@ -16,6 +17,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static pt.pmfdc.appointmentservice.bdd.support.JwtTestTokens.adminToken;
+import static pt.pmfdc.appointmentservice.bdd.support.JwtTestTokens.nonAdminToken;
 import static pt.pmfdc.appointmentservice.jooq.Tables.APPOINTMENTS;
 
 @RequiredArgsConstructor
@@ -25,8 +28,53 @@ public class AppointmentApiSteps {
     private final ObjectMapper objectMapper;
     private final DSLContext dsl;
 
+    @Value("${admin.jwt.secret}")
+    private String jwtSecret;
+
     private ResponseEntity<String> lastResponse;
     private UUID createdAppointmentId;
+
+    // ... existing code ...
+
+    @When("I list appointments via API")
+    public void iListAppointmentsViaApi() {
+        lastResponse = restTemplate.exchange(
+                "/appointments",
+                HttpMethod.GET,
+                HttpEntity.EMPTY,
+                String.class
+        );
+    }
+
+    @When("I list appointments via API as admin")
+    public void iListAppointmentsViaApiAsAdmin() {
+        String token = adminToken(jwtSecret);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+
+        lastResponse = restTemplate.exchange(
+                "/appointments",
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
+                String.class
+        );
+    }
+
+    @When("I list appointments via API as non-admin")
+    public void iListAppointmentsViaApiAsNonAdmin() {
+        String token = nonAdminToken(jwtSecret);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+
+        lastResponse = restTemplate.exchange(
+                "/appointments",
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
+                String.class
+        );
+    }
 
     @When("I create an appointment via API:")
     public void iCreateAnAppointmentViaApi(DataTable dataTable) throws Exception {

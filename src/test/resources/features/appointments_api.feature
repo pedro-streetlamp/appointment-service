@@ -30,3 +30,13 @@ Feature: Appointments API
       | Ana Costa   | ana@a.com    | Cardiology | 2030-01-01T10:00:00Z | 2030-01-01T10:30:00Z |
     Then the API response status should be 409
     And I should get an API error message "No availability (doctor or room) for the requested timeslot"
+
+  Scenario: List appointments requires admin JWT
+    When I list appointments via API
+    Then the API response status should be 401
+
+    When I list appointments via API as non-admin
+    Then the API response status should be 403
+
+    When I list appointments via API as admin
+    Then the API response status should be 200
